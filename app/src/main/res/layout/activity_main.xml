@@ -3,9 +3,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.chibde.webviewhorizontal.HorizontalWebView
+    <com.chibde.lib.HorizontalWebView
         android:id="@+id/web_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:scrollbars="none"/>
 </RelativeLayout>
 
