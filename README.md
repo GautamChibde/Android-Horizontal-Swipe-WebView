@@ -8,6 +8,16 @@ Custom WebView implementation for horizontal swipes
 
 ![Alt text](https://media.giphy.com/media/4KEZmAdRDLos71TtdL/giphy.gif)
 
+# Usage
+
+```` java
+HorizontalWebView wv = findViewById(R.id.web_view);
+wv.getSettings().setJavaScriptEnabled(true);
+    
+wv.loadUrl("file:///android_asset/ch03.html"); // give the source from assets
+
+````
+
 License
 =======
 Copyright 2018 Gautam Chibde
