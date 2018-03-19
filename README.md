@@ -1,5 +1,7 @@
 # Android-Horizontal-Swipe-WebView
 
+[![codebeat badge](https://codebeat.co/badges/b5bce5ce-046e-41ea-8387-7ab90901ed81)](https://codebeat.co/projects/github-com-gautamchibde-android-horizontal-swipe-webview-master)
+
 Custom WebView implementation for horizontal swipes
 
 # Demo
