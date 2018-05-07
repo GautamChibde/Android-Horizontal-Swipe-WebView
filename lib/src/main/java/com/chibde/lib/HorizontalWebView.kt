@@ -11,15 +11,17 @@ import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 
+
 /**
  * @author gautam chibde on 22/6/17.
  */
 
-class HorizontalWebView(context: Context, attrs: AttributeSet) : WebView(context, attrs) {
+class HorizontalWebView(context: Context,
+                        attrs: AttributeSet) : WebView(context, attrs) {
     private var x1 = -1f
     private var pageCount = 0
     private var currentPage = 0
-    private var current_x = 0
+    private var currentX = 0
 
     private val prevPagePosition: Int
         get() = Math.ceil((--currentPage * this.measuredWidth).toDouble()).toInt()
@@ -47,47 +49,52 @@ class HorizontalWebView(context: Context, attrs: AttributeSet) : WebView(context
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
-            MotionEvent.ACTION_DOWN -> x1 = event.x
+            MotionEvent.ACTION_MOVE -> super.onTouchEvent(event)
+            MotionEvent.ACTION_DOWN -> {
+                x1 = event.x
+                return super.onTouchEvent(event)
+            }
             MotionEvent.ACTION_UP -> {
                 val x2 = event.x
                 val deltaX = x2 - x1
-                if (Math.abs(deltaX) > 100) {
+                if (Math.abs(deltaX) > 30) {
                     // Left to Right swipe action
                     return if (x2 > x1) {
-                        turnPageLeft()
+                        turnPageLeft(deltaX)
                         true
                     } else {
-                        turnPageRight()
+                        turnPageRight(deltaX)
                         true
                     }// Right to left swipe action
                 }
             }
+            else -> super.onTouchEvent(event)
         }
-        return true
+        return super.onTouchEvent(event)
     }
 
-    private fun turnPageLeft() {
+    private fun turnPageLeft(deltaX: Float) {
         if (currentPage > 0) {
             val scrollX = prevPagePosition
-            loadAnimation(scrollX)
-            current_x = scrollX
+            loadAnimation(scrollX, deltaX)
+            currentX = scrollX
             scrollTo(scrollX, 0)
         }
     }
 
-    private fun turnPageRight() {
+    private fun turnPageRight(deltaX: Float) {
         if (currentPage < pageCount - 1) {
             val paddingOffset = 10
             val scrollX = nextPagePosition
-            loadAnimation(scrollX + paddingOffset)
-            current_x = scrollX + paddingOffset
+            loadAnimation(scrollX + paddingOffset, deltaX)
+            currentX = scrollX + paddingOffset
             scrollTo(scrollX + paddingOffset, 0)
         }
     }
 
-    private fun loadAnimation(scrollX: Int) {
+    private fun loadAnimation(scrollX: Int, deltaX: Float) {
         val anim = ObjectAnimator.ofInt(this, "scrollX",
-                current_x, scrollX)
+                currentX - deltaX.toInt(), scrollX)
         anim.duration = 500
         anim.interpolator = LinearInterpolator()
         anim.start()

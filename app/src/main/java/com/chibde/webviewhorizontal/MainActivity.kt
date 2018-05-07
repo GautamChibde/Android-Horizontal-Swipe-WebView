@@ -4,11 +4,7 @@ import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.webkit.JsResult
-import android.webkit.WebChromeClient
 import android.webkit.WebView
-import android.webkit.WebViewClient
-
 import com.chibde.lib.HorizontalWebView
 
 class MainActivity : AppCompatActivity() {
