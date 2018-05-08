@@ -1,9 +1,11 @@
 package com.chibde.lib
 
 import android.animation.ObjectAnimator
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.util.AttributeSet
-import android.util.Base64
+import android.util.DisplayMetrics
 import android.view.MotionEvent
 import android.view.animation.LinearInterpolator
 import android.webkit.JsResult
@@ -11,18 +13,16 @@ import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 
-
 /**
  * @author gautam chibde on 22/6/17.
  */
-
 class HorizontalWebView(context: Context,
                         attrs: AttributeSet) : WebView(context, attrs) {
     private var x1 = -1f
     private var pageCount = 0
     private var currentPage = 0
     private var currentX = 0
-
+    private var delta: Int = 30
     private val prevPagePosition: Int
         get() = Math.ceil((--currentPage * this.measuredWidth).toDouble()).toInt()
 
@@ -30,9 +30,9 @@ class HorizontalWebView(context: Context,
         get() = Math.ceil((++currentPage * this.measuredWidth).toDouble()).toInt()
 
     init {
+        setDelta()
         this.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView, url: String) {
-                injectCSS()
                 injectJavascript()
             }
         }
@@ -41,12 +41,20 @@ class HorizontalWebView(context: Context,
             override fun onJsAlert(view: WebView, url: String, message: String, result: JsResult): Boolean {
                 val pageCount = Integer.parseInt(message)
                 this@HorizontalWebView.setPageCount(pageCount)
+                injectCSS()
                 result.confirm()
                 return true
             }
         }
     }
 
+    private fun setDelta() {
+        val displayMetrics = DisplayMetrics()
+        (context as Activity).windowManager.defaultDisplay.getMetrics(displayMetrics)
+        delta = (displayMetrics.widthPixels * 0.04).toInt()
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_MOVE -> super.onTouchEvent(event)
@@ -57,7 +65,7 @@ class HorizontalWebView(context: Context,
             MotionEvent.ACTION_UP -> {
                 val x2 = event.x
                 val deltaX = x2 - x1
-                if (Math.abs(deltaX) > 30) {
+                if (Math.abs(deltaX) > delta) {
                     // Left to Right swipe action
                     return if (x2 > x1) {
                         turnPageLeft(deltaX)
@@ -84,18 +92,17 @@ class HorizontalWebView(context: Context,
 
     private fun turnPageRight(deltaX: Float) {
         if (currentPage < pageCount - 1) {
-            val paddingOffset = 10
             val scrollX = nextPagePosition
-            loadAnimation(scrollX + paddingOffset, deltaX)
-            currentX = scrollX + paddingOffset
-            scrollTo(scrollX + paddingOffset, 0)
+            loadAnimation(scrollX + PADDING_OFFSET, deltaX)
+            currentX = scrollX + PADDING_OFFSET
+            scrollTo(scrollX + PADDING_OFFSET, 0)
         }
     }
 
     private fun loadAnimation(scrollX: Int, deltaX: Float) {
         val anim = ObjectAnimator.ofInt(this, "scrollX",
                 currentX - deltaX.toInt(), scrollX)
-        anim.duration = 500
+        anim.duration = SCROLL_DURATION
         anim.interpolator = LinearInterpolator()
         anim.start()
     }
@@ -103,7 +110,7 @@ class HorizontalWebView(context: Context,
     private fun injectJavascript() {
         val js = "function initialize(){\n" +
                 "    var d = document.getElementsByTagName('body')[0];\n" +
-                "    var ourH = window.innerHeight - 20;\n" +
+                "    var ourH = window.innerHeight - 40;\n" +
                 "    var ourW = window.innerWidth - (2*20);\n" +
                 "    var fullH = d.offsetHeight;\n" +
                 "    var pageCount = Math.floor(fullH/ourH)+1;\n" +
@@ -114,6 +121,7 @@ class HorizontalWebView(context: Context,
                 "    d.style.margin = 0;\n" +
                 "    d.style.webkitColumnGap = '40px';\n" +
                 "    d.style.webkitColumnCount = pageCount;\n" +
+                "    document.head.innerHTML = document.head.innerHTML + '<meta name=\"viewport\" content=\"height=device-height, user-scalable=no\" />';" +
                 "    return pageCount;\n" +
                 "}"
         this.loadUrl("javascript:$js")
@@ -121,27 +129,21 @@ class HorizontalWebView(context: Context,
     }
 
     private fun injectCSS() {
-        try {
-            val inputStream = context.assets.open("style.css")
-            val buffer = ByteArray(inputStream.available())
-            if (inputStream.read(buffer) == 0) return
-            inputStream.close()
-            val encoded = Base64.encodeToString(buffer, Base64.NO_WRAP)
-            this.loadUrl("javascript:(function() {" +
-                    "var parent = document.getElementsByTagName('head').item(0);" +
-                    "var style = document.createElement('style');" +
-                    "style.type = 'text/css';" +
-                    // Tell the browser to BASE64-decode the string into your script !!!
-                    "style.innerHTML = window.atob('" + encoded + "');" +
-                    "parent.appendChild(style)" +
-                    "})()")
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-
+        this.loadUrl("javascript:(function() {" +
+                "var parent = document.getElementsByTagName('head').item(0);" +
+                "var style = document.createElement('style');" +
+                "style.type = 'text/css';" +
+                "style.innerHTML = 'body { padding: 20px 20px !important; }';" +
+                "parent.appendChild(style)" +
+                "})()")
     }
 
     fun setPageCount(pageCount: Int) {
         this.pageCount = pageCount
+    }
+
+    companion object {
+        const val SCROLL_DURATION: Long = 400
+        const val PADDING_OFFSET = 10
     }
 }
